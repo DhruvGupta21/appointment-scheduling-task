@@ -1,4 +1,5 @@
 import { z } from "zod";
+//schema validation for registration payload
 export const registerSchema = z.object({
     name: z.string({ message: "Name must be given." })
         .min(3, { message: "Name must be atleast 3 characters long." }),
@@ -8,6 +9,7 @@ export const registerSchema = z.object({
         .min(6, { message: "password must be atleast 6 characters long." }),
     role: z.enum(["doctor", "patient"], { message: "Role must be either 'doctor' or 'patient'." }),
 });
+//schema validation for login payload
 export const loginSchema = z.object({
     email: z.string({ message: "email is required" })
         .email({ message: "email must be valid" }),
