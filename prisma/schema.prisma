@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  doctor
+  patient
+}
+
+model User {
+  id                 Int       @id @default(autoincrement())
+  name               String    @db.VarChar(191)
+  email              String    @unique
+  password           String
+  role               Role
+  email_verified_at  DateTime?
+  email_verify_token String?
+  created_at         DateTime  @default(now())
+  tokenVersion       Int       @default(0)
+}
+
+model Appointments {
+  id        Int    @id @default(autoincrement())
+  doctorID  Int
+  patientID Int
+  date      String
+  time      String
+}

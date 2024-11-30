@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('../partials/head')%>
+
+    <body>
+        <div class='container'>
+            <p> Hello <strong>
+                    <%= name %>
+                </strong>
+            </p>
+            <p>Your appointment with Dr. <%= doctor %> is successfully scheduled</p>
+            <p>Date : <%= date%>
+            </p>
+            <p>Time: <%= time %>
+            </p>
+            <%- include('../partials/footer')%>
+        </div>
+    </body>
+
+</html>

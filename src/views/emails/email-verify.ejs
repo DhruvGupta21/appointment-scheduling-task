@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('../partials/head')%>
+
+    <body>
+        <div class='container'>
+            <p> Hello <strong>
+                    <%= name %>
+                </strong>
+            </p>
+            <p>We are happy to on board you</p>
+            <p>Please click on link below to activate your account</p>
+            <a href="<%= url %>" target="_blank">Please click here</a>
+            <p>If unable to click above link, copy below link in your browser</p>
+            <p>
+                <%= url %>
+            </p>
+            <%- include('../partials/footer')%>
+        </div>
+    </body>
+
+</html>
