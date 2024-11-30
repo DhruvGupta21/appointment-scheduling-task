@@ -8,10 +8,12 @@ import { appointmentSchema } from "../validation/appointmentValidation.js";
 
 const router = Router();
 
+//route to create an appointment, accepts date, time, and doctorID as payload
 router.post("/createAppointment", authMiddleware, async (req: Request, res: Response) => {
     try {
         const body = req.body;
         const payload = appointmentSchema.parse(body);
+
         //check if doctor exists
         let doctor = await prisma.user.findUnique({ where: { id: payload.doctorID } });
         if (!doctor || doctor === null) {
@@ -22,6 +24,7 @@ router.post("/createAppointment", authMiddleware, async (req: Request, res: Resp
             });
         }
 
+        //check if given doctorID belongs to a doctor
         if (doctor.role !== 'doctor') {
             return res.status(403).json({
                 errors: {
@@ -29,10 +32,11 @@ router.post("/createAppointment", authMiddleware, async (req: Request, res: Resp
                 }
             });
         }
-        //console.log(payload);
+
         const requestedDateTime = new Date(`${payload.date}T${payload.time}`);
         const now = new Date();
 
+        //check if the time for appointment is valid time in future
         if (requestedDateTime <= now) {
             return res.status(422).json({
                 errors: {
@@ -55,9 +59,6 @@ router.post("/createAppointment", authMiddleware, async (req: Request, res: Resp
         const greater = formatTime(startRange); // Local start time in HH:mm
         const lesser = formatTime(endRange);   // Local end time in HH:mm
 
-        //console.log(greater); // Debugging logs
-        //console.log(lesser);
-
         // Check for overlapping appointments
         const overlappingAppointment = await prisma.appointments.findFirst({
             where: {
@@ -78,19 +79,25 @@ router.post("/createAppointment", authMiddleware, async (req: Request, res: Resp
             });
         }
         const patient = req.user;
-        //console.log(patient);
-        // Save the appointment
-        const reminderTime = requestedDateTime.getTime() - 2 * 60 * 60 * 1000;//calculation of reminder time, i.e, 2 hours before the appointment
-        const delay = reminderTime - Date.now();//calculation of delay(in milliseconds) in email, reminderTime - currentTime
-        //console.log(delay);
+
+        const reminderTime = requestedDateTime.getTime() - 2 * 60 * 60 * 1000; //calculation of reminder time, i.e, 2 hours before the appointment
+        const delay = reminderTime - Date.now(); //calculation of delay(in milliseconds) in email, reminderTime - currentTime
+
+        //email format used from appointment-confirm.ejs file
         const emailBody = await renderEmailEjs("appointment-confirm", { name: patient!.name, doctor: doctor.name, date: payload.date, time: payload.time });
-        await emailQueue.add(emailQueueName, { to: patient!.email, subject: "appointment scheduled", body: emailBody });
+        //email added to queue for appointment confirmation
+        await emailQueue.add(emailQueueName, { to: patient!.email, subject: "Appointment Scheduled", body: emailBody });
+
+        //email format used from appointment-reminder.ejs file
         const reminderBody = await renderEmailEjs("appointment-reminder", { name: patient!.name, doctor: doctor.name, date: payload.date, time: payload.time });
-        await emailQueue.add(emailQueueName, { to: patient!.email, subject: "appointment reminder", body: reminderBody }
+        //email added to queue for appointment reminder
+        await emailQueue.add(emailQueueName, { to: patient!.email, subject: "Appointment Reminder", body: reminderBody }
             , {
                 delay: delay
             }
         );
+
+        // Save the appointment
         const appointment = await prisma.appointments.create({
             data: {
                 doctorID: payload.doctorID,
@@ -106,6 +113,9 @@ router.post("/createAppointment", authMiddleware, async (req: Request, res: Resp
         });
 
     } catch (error) {
+        //block for error handling
+
+        //formatted error
         if (error instanceof ZodError) {
             const errors = formatError(error);
             return res.status(422).json({ message: "Invalid data", errors });
